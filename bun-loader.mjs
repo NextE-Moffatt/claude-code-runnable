@@ -1,9 +1,18 @@
 // ESM loader:
 // 1. Intercepts bun: protocol -> bun-mock.mjs
 // 2. Patches React CJS module to add useEffectEvent and other React 19 APIs
+// 3. Injects MACRO as a global (Bun compile-time constants, used without import in many files)
 
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
+
+// Inject MACRO as a global so all source files can access it without importing
+// In the original Bun build, MACRO is a compile-time constant injected at bundle time.
+globalThis.MACRO = {
+  VERSION: '2.1.88',
+  ISSUES_EXPLAINER: 'report the issue at https://github.com/anthropics/claude-code/issues',
+  VERSION_CHANGELOG: '',
+};
 
 const bunMockUrl = new URL('./bun-mock.mjs', import.meta.url).href;
 
