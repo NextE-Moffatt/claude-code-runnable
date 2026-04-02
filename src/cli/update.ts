@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import chalk from 'chalk'
 import { logEvent } from 'src/services/analytics/index.js'
 import {

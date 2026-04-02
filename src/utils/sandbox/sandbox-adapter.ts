@@ -489,7 +489,11 @@ function isSandboxRequired(): boolean {
  * Supports: macOS, Linux, and WSL2+ (WSL1 is not supported)
  */
 const isSupportedPlatform = memoize((): boolean => {
-  return BaseSandboxManager.isSupportedPlatform()
+  try {
+    return BaseSandboxManager.isSupportedPlatform()
+  } catch (e) {
+    return false
+  }
 })
 
 /**

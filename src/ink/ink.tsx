@@ -178,11 +178,14 @@ export default class Ink {
     y: number;
   } | null = null;
   constructor(private readonly options: Options) {
+    process.stderr.write('[DEBUG] Ink constructor: autoBind\n');
     autoBind(this);
     if (this.options.patchConsole) {
+      process.stderr.write('[DEBUG] Ink constructor: patchConsole\n');
       this.restoreConsole = this.patchConsole();
       this.restoreStderr = this.patchStderr();
     }
+    process.stderr.write('[DEBUG] Ink constructor: terminal setup\n');
     this.terminal = {
       stdout: options.stdout,
       stderr: options.stderr
@@ -219,9 +222,11 @@ export default class Ink {
     this.isUnmounted = false;
 
     // Unmount when process exits
+    process.stderr.write('[DEBUG] Ink constructor: onExit\n');
     this.unsubscribeExit = onExit(this.unmount, {
       alwaysLast: false
     });
+    process.stderr.write('[DEBUG] Ink constructor: TTY setup\n');
     if (options.stdout.isTTY) {
       options.stdout.on('resize', this.handleResize);
       process.on('SIGCONT', this.handleResume);
@@ -230,9 +235,11 @@ export default class Ink {
         process.off('SIGCONT', this.handleResume);
       };
     }
+    process.stderr.write('[DEBUG] Ink constructor: rootNode\n');
     this.rootNode = dom.createNode('ink-root');
     this.focusManager = new FocusManager((target, event) => dispatcher.dispatchDiscrete(target, event));
     this.rootNode.focusManager = this.focusManager;
+    process.stderr.write('[DEBUG] Ink constructor: createRenderer\n');
     this.renderer = createRenderer(this.rootNode, this.stylePool);
     this.rootNode.onRender = this.scheduleRender;
     this.rootNode.onImmediateRender = this.onRender;
@@ -257,6 +264,7 @@ export default class Ink {
       }
     };
 
+    process.stderr.write('[DEBUG] Ink constructor: createContainer\n');
     // @ts-expect-error @types/react-reconciler@0.32.3 declares 11 args with transitionCallbacks,
     // but react-reconciler 0.33.0 source only accepts 10 args (no transitionCallbacks)
     this.container = reconciler.createContainer(this.rootNode, ConcurrentRoot, null, false, null, 'id', noop,

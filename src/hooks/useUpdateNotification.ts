@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import { useState } from 'react'
 import { major, minor, patch } from 'semver'
 

@@ -1,0 +1,1 @@
+Analyze whether this action requires Anthropic-specific permissions.

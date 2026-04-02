@@ -7,6 +7,8 @@ export const MACRO = {
   ISSUES_EXPLAINER: 'report the issue at https://github.com/anthropics/claude-code/issues',
   VERSION_CHANGELOG: '',
 };
+// Make MACRO available as a bare global for files that use it without importing
+globalThis.MACRO = MACRO;
 
 // feature: Bun's bundle-time feature flags (called as a function: feature('FLAG_NAME'))
 export const feature = () => false;

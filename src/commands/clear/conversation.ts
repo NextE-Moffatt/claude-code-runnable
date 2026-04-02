@@ -2,6 +2,8 @@
  * Conversation clearing utility.
  * This module has heavier dependencies and should be lazy-loaded when possible.
  */
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { feature } from 'bun:bundle'
 import { randomUUID, type UUID } from 'crypto'
 import {

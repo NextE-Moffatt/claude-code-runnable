@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import type { Attributes } from '@opentelemetry/api'
 import { getSessionId } from 'src/bootstrap/state.js'
 import { getOauthAccountInfo } from './auth.js'

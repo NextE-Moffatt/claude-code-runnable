@@ -6,9 +6,12 @@
 //    key) in parallel — isRemoteManagedSettingsEligible() otherwise reads them
 //    sequentially via sync spawn inside applySafeConfigEnvironmentVariables()
 //    (~65ms on every macOS startup)
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { profileCheckpoint, profileReport } from './utils/startupProfiler.js';
 
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
+process.stderr.write('[DEBUG] main.tsx module loading started\n');
 profileCheckpoint('main_tsx_entry');
 import { startMdmRawRead } from './utils/settings/mdm/rawRead.js';
 
@@ -583,15 +586,18 @@ const _pendingSSH: PendingSSH | undefined = feature('SSH_REMOTE') ? {
   extraCliArgs: []
 } : undefined;
 export async function main() {
+  process.stderr.write('[DEBUG] main() function entered\n');
   profileCheckpoint('main_function_start');
 
   // SECURITY: Prevent Windows from executing commands from current directory
   // This must be set before ANY command execution to prevent PATH hijacking attacks
   // See: https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-searchpathw
   process.env.NoDefaultCurrentDirectoryInExePath = '1';
+  process.stderr.write('[DEBUG] A: before initializeWarningHandler\n');
 
   // Initialize warning handler early to catch warnings
   initializeWarningHandler();
+  process.stderr.write('[DEBUG] B: after initializeWarningHandler\n');
   process.on('exit', () => {
     resetCursor();
   });
@@ -846,12 +852,16 @@ export async function main() {
   if (process.env.CLAUDE_CODE_ENVIRONMENT_KIND === 'bridge') {
     setSessionSource('remote-control');
   }
+  process.stderr.write('[DEBUG] C: before eagerLoadSettings\n');
   profileCheckpoint('main_client_type_determined');
 
   // Parse and load settings flags early, before init()
   eagerLoadSettings();
+  process.stderr.write('[DEBUG] D: after eagerLoadSettings\n');
   profileCheckpoint('main_before_run');
+  process.stderr.write('[DEBUG] before run()\n');
   await run();
+  process.stderr.write('[DEBUG] after run() returned\n');
   profileCheckpoint('main_after_run');
 }
 async function getInputPrompt(prompt: string, inputFormat: 'text' | 'stream-json'): Promise<string | AsyncIterable<string>> {
@@ -905,15 +915,13 @@ async function run(): Promise<CommanderCommand> {
   // Use preAction hook to run initialization only when executing a command,
   // not when displaying help. This avoids the need for env variable signaling.
   program.hook('preAction', async thisCommand => {
+    process.stderr.write('[DEBUG] preAction hook entered\n');
     profileCheckpoint('preAction_start');
-    // Await async subprocess loads started at module evaluation (lines 12-20).
-    // Nearly free — subprocesses complete during the ~135ms of imports above.
-    // Must resolve before init() which triggers the first settings read
-    // (applySafeConfigEnvironmentVariables → getSettingsForSource('policySettings')
-    // → isRemoteManagedSettingsEligible → sync keychain reads otherwise ~65ms).
     await Promise.all([ensureMdmSettingsLoaded(), ensureKeychainPrefetchCompleted()]);
+    process.stderr.write('[DEBUG] preAction after MDM/keychain, calling init()\n');
     profileCheckpoint('preAction_after_mdm');
     await init();
+    process.stderr.write('[DEBUG] preAction after init()\n');
     profileCheckpoint('preAction_after_init');
 
     // process.title on Windows sets the console title directly; on POSIX,
@@ -1004,6 +1012,7 @@ async function run(): Promise<CommanderCommand> {
   // top-level option. Single-value + collect accumulator means each
   // --plugin-dir takes exactly one arg; repeat the flag for multiple dirs.
   .option('--plugin-dir <path>', 'Load plugins from a directory for this session only (repeatable: --plugin-dir A --plugin-dir B)', (val: string, prev: string[]) => [...prev, val], [] as string[]).option('--disable-slash-commands', 'Disable all skills', () => true).option('--chrome', 'Enable Claude in Chrome integration').option('--no-chrome', 'Disable Claude in Chrome integration').option('--file <specs...>', 'File resources to download at startup. Format: file_id:relative_path (e.g., --file file_abc:doc.txt file_def:img.png)').action(async (prompt, options) => {
+    process.stderr.write('[DEBUG] action handler entered\n');
     profileCheckpoint('action_handler_start');
 
     // --bare = one-switch minimal mode. Sets SIMPLE so all the existing
@@ -1859,13 +1868,24 @@ async function run(): Promise<CommanderCommand> {
     }
     const effectivePrompt = prompt || '';
     let inputPrompt = await getInputPrompt(effectivePrompt, (inputFormat ?? 'text') as 'text' | 'stream-json');
+    process.stderr.write('[DEBUG] checkpoint: action_after_input_prompt\n');
     profileCheckpoint('action_after_input_prompt');
 
     // Activate proactive mode BEFORE getTools() so SleepTool.isEnabled()
     // (which returns isProactiveActive()) passes and Sleep is included.
     // The later REPL-path maybeActivateProactive() calls are idempotent.
+    process.stderr.write('[DEBUG] before maybeActivateProactive\n');
     maybeActivateProactive(options);
-    let tools = getTools(toolPermissionContext);
+    process.stderr.write('[DEBUG] before getTools\n');
+    let tools: ReturnType<typeof getTools>;
+    try {
+      tools = getTools(toolPermissionContext);
+      process.stderr.write('[DEBUG] after getTools OK\n');
+    } catch (e) {
+      process.stderr.write('[DEBUG] getTools threw: ' + String(e) + '\n');
+      if (e instanceof Error) process.stderr.write(e.stack + '\n');
+      throw e;
+    }
 
     // Apply coordinator mode tool filtering for headless path
     // (mirrors useMergedTools.ts filtering for REPL/interactive path)
@@ -1875,6 +1895,7 @@ async function run(): Promise<CommanderCommand> {
       } = await import('./utils/toolPool.js');
       tools = applyCoordinatorToolFilter(tools);
     }
+    process.stderr.write('[DEBUG] checkpoint: action_tools_loaded\n');
     profileCheckpoint('action_tools_loaded');
     let jsonSchema: ToolInputJSONSchema | undefined;
     if (isSyntheticOutputToolEnabled({
@@ -1901,6 +1922,7 @@ async function run(): Promise<CommanderCommand> {
     }
 
     // IMPORTANT: setup() must be called before any other code that depends on the cwd or worktree setup
+    process.stderr.write('[DEBUG] before setup()\n');
     profileCheckpoint('action_before_setup');
     logForDebugging('[STARTUP] Running setup()...');
     const setupStart = Date.now();
@@ -1932,6 +1954,7 @@ async function run(): Promise<CommanderCommand> {
     commandsPromise?.catch(() => {});
     agentDefsPromise?.catch(() => {});
     await setupPromise;
+    process.stderr.write('[DEBUG] setup() completed\n');
     logForDebugging(`[STARTUP] setup() completed in ${Date.now() - setupStart}ms`);
     profileCheckpoint('action_after_setup');
 
@@ -2026,7 +2049,9 @@ async function run(): Promise<CommanderCommand> {
     const commandsStart = Date.now();
     // Join the promises kicked before setup() (or start fresh if
     // worktreeEnabled gated the early kick). Both memoized by cwd.
+    process.stderr.write('[DEBUG] before commands/agents Promise.all\n');
     const [commands, agentDefinitionsResult] = await Promise.all([commandsPromise ?? getCommands(currentCwd), agentDefsPromise ?? getAgentDefinitionsWithOverrides(currentCwd)]);
+    process.stderr.write('[DEBUG] commands/agents loaded\n');
     logForDebugging(`[STARTUP] Commands and agents loaded in ${Date.now() - commandsStart}ms`);
     profileCheckpoint('action_commands_loaded');
 
@@ -2223,10 +2248,12 @@ async function run(): Promise<CommanderCommand> {
       if ("external" === 'ant') {
         installAsciicastRecorder();
       }
+      process.stderr.write('[DEBUG] before createRoot\n');
       const {
         createRoot
       } = await import('./ink.js');
       root = await createRoot(ctx.renderOptions);
+      process.stderr.write('[DEBUG] after createRoot\n');
 
       // Log startup time now, before any blocking dialog renders. Logging
       // from REPL's first render (the old location) included however long
@@ -2236,10 +2263,12 @@ async function run(): Promise<CommanderCommand> {
         event: 'startup' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         durationMs: Math.round(process.uptime() * 1000)
       });
+      process.stderr.write('[DEBUG] before showSetupScreens\n');
       logForDebugging('[STARTUP] Running showSetupScreens()...');
       const setupScreensStart = Date.now();
       const onboardingShown = await showSetupScreens(root, permissionMode, allowDangerouslySkipPermissions, commands, enableClaudeInChrome, devChannels);
       logForDebugging(`[STARTUP] showSetupScreens() completed in ${Date.now() - setupScreensStart}ms`);
+      process.stderr.write('[DEBUG] after showSetupScreens\n');
 
       // Now that trust is established and GrowthBook has auth headers,
       // resolve the --remote-control / --rc entitlement gate.
@@ -2299,7 +2328,9 @@ async function run(): Promise<CommanderCommand> {
       // Validate that the active token's org matches forceLoginOrgUUID (if set
       // in managed settings). Runs after onboarding so managed settings and
       // login state are fully loaded.
+      process.stderr.write('[DEBUG] before validateForceLoginOrg\n');
       const orgValidation = await validateForceLoginOrg();
+      process.stderr.write('[DEBUG] after validateForceLoginOrg\n');
       if (!orgValidation.valid) {
         await exitWithError(root, orgValidation.message);
       }
@@ -2318,6 +2349,7 @@ async function run(): Promise<CommanderCommand> {
     // where trust is implicit). This prevents plugin LSP servers from executing
     // code in untrusted directories before user consent.
     // Must be after inline plugins are set (if any) so --plugin-dir LSP servers are included.
+    process.stderr.write('[DEBUG] initializeLspServerManager\n');
     initializeLspServerManager();
 
     // Show settings validation errors after trust is established
@@ -2378,9 +2410,11 @@ async function run(): Promise<CommanderCommand> {
     }
 
     // Resolve MCP configs (started early, overlaps with setup/trust dialog work)
+    process.stderr.write('[DEBUG] awaiting mcpConfigPromise\n');
     const {
       servers: existingMcpConfigs
     } = await mcpConfigPromise;
+    process.stderr.write('[DEBUG] mcpConfigPromise resolved\n');
     logForDebugging(`[STARTUP] MCP configs resolved in ${mcpConfigResolvedMs}ms (awaited at +${Date.now() - mcpConfigStart}ms)`);
     // CLI flag (--mcp-config) should override file-based configs, matching settings precedence
     const allMcpConfigs = {
@@ -2399,6 +2433,7 @@ async function run(): Promise<CommanderCommand> {
         regularMcpConfigs[name] = typedConfig as ScopedMcpServerConfig;
       }
     }
+    process.stderr.write('[DEBUG] action_mcp_configs_loaded\n');
     profileCheckpoint('action_mcp_configs_loaded');
 
     // Prefetch MCP resources after trust dialog (this is where execution happens).
@@ -2486,6 +2521,7 @@ async function run(): Promise<CommanderCommand> {
         }
       }
     }
+    process.stderr.write('[DEBUG] logForDiagnosticsNoPII started\n');
     logForDiagnosticsNoPII('info', 'started', {
       version: MACRO.VERSION,
       is_native_binary: isInBundledMode()
@@ -2527,6 +2563,7 @@ async function run(): Promise<CommanderCommand> {
     // and fire multi-clauding telemetry. Lives here (not init.ts) so only the
     // REPL path registers — not subcommands like `claude doctor`. Chained:
     // count must run after register's write completes or it misses our own file.
+    process.stderr.write('[DEBUG] registerSession\n');
     void registerSession().then(registered => {
       if (!registered) return;
       if (sessionNameArg) {
@@ -3795,6 +3832,7 @@ async function run(): Promise<CommanderCommand> {
         }
       }
       const initialMessages = deepLinkBanner ? [deepLinkBanner, ...hookMessages] : hookMessages.length > 0 ? hookMessages : undefined;
+      process.stderr.write('[DEBUG] before launchRepl\n');
       await launchRepl(root, {
         getFpsMetrics,
         stats,
@@ -3804,6 +3842,7 @@ async function run(): Promise<CommanderCommand> {
         initialMessages,
         pendingHookMessages
       }, renderAndRun);
+      process.stderr.write('[DEBUG] after launchRepl\n');
     }
   }).version(`${MACRO.VERSION} (Claude Code)`, '-v, --version', 'Output the version number');
 
@@ -4501,7 +4540,9 @@ Examples:
     });
   }
   profileCheckpoint('run_before_parse');
+  process.stderr.write('[DEBUG] before program.parseAsync\n');
   await program.parseAsync(process.argv);
+  process.stderr.write('[DEBUG] after program.parseAsync\n');
   profileCheckpoint('run_after_parse');
 
   // Record final checkpoint for total_time calculation

@@ -13,6 +13,8 @@
  * initExtractMemories() in beforeEach to get a fresh closure.
  */
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { feature } from 'bun:bundle'
 import { basename } from 'path'
 import { getIsRemoteMode } from '../../bootstrap/state.js'

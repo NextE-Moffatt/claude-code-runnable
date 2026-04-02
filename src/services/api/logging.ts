@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature, MACRO } from 'bun:bundle'
 import { APIError } from '@anthropic-ai/sdk'
 import type {
   BetaStopReason,
@@ -114,7 +114,12 @@ function detectGateway({
   if (headers) {
     // Header names are already lowercase from the Headers API
     const headerNames: string[] = []
-    headers.forEach((_, key) => headerNames.push(key))
+    if (typeof headers.forEach === 'function') {
+      headers.forEach((_, key) => headerNames.push(key))
+    } else {
+      // Fallback for plain objects (Node.js compatibility)
+      Object.keys(headers as unknown as Record<string, string>).forEach(k => headerNames.push(k))
+    }
     for (const [gw, { prefixes }] of Object.entries(GATEWAY_FINGERPRINTS)) {
       if (prefixes.some(p => headerNames.some(h => h.startsWith(p)))) {
         return gw as KnownGateway

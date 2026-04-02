@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import { execa } from 'execa'
 import memoize from 'lodash-es/memoize.js'
 import { getSessionId } from '../bootstrap/state.js'

@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import { execa } from 'execa'
 import { readFile, realpath } from 'fs/promises'
 import { homedir } from 'os'

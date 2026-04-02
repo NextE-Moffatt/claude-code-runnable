@@ -4,6 +4,8 @@
 // for in-process mic access. Falls back to SoX `rec` or arecord (ALSA)
 // on Linux if the native module is unavailable.
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { type ChildProcess, spawn, spawnSync } from 'child_process'
 import { readFile } from 'fs/promises'
 import { logForDebugging } from '../utils/debug.js'

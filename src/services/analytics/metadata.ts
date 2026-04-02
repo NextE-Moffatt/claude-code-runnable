@@ -6,6 +6,8 @@
  * event metadata across all analytics systems (Datadog, 1P).
  */
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { extname } from 'path'
 import memoize from 'lodash-es/memoize.js'
 import { env, getHostPlatformForAnalytics } from '../../utils/env.js'
@@ -39,7 +41,7 @@ import {
   getTeamName,
   isTeammate,
 } from '../../utils/teammate.js'
-import { feature } from 'bun:bundle'
+import { feature, MACRO } from 'bun:bundle'
 
 /**
  * Marker type for verifying analytics metadata doesn't contain sensitive data

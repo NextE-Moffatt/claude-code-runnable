@@ -1,5 +1,7 @@
 /* eslint-disable custom-rules/no-process-exit */
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { feature } from 'bun:bundle'
 import chalk from 'chalk'
 import {

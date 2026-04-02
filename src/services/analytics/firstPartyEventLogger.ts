@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import type { AnyValueMap, Logger, logs } from '@opentelemetry/api-logs'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import {

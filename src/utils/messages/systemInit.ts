@@ -1,4 +1,6 @@
-import { feature } from 'bun:bundle'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+import { feature, MACRO } from 'bun:bundle'
 import { randomUUID } from 'crypto'
 import { getSdkBetas, getSessionId } from 'src/bootstrap/state.js'
 import { DEFAULT_OUTPUT_STYLE_NAME } from 'src/constants/outputStyles.js'

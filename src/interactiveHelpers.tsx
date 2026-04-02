@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle';
+import { feature, MACRO } from 'bun:bundle';
 import { appendFileSync } from 'fs';
 import React from 'react';
 import { logEvent } from 'src/services/analytics/index.js';
@@ -107,59 +107,59 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     return false;
   }
   const config = getGlobalConfig();
+  process.stderr.write(`[DEBUG] showSetupScreens: config.theme=${config.theme} hasCompletedOnboarding=${config.hasCompletedOnboarding}\n`);
   let onboardingShown = false;
   if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
   ) {
     onboardingShown = true;
+    process.stderr.write('[DEBUG] showSetupScreens: importing Onboarding\n');
     const {
       Onboarding
     } = await import('./components/Onboarding.js');
+    process.stderr.write('[DEBUG] showSetupScreens: showing Onboarding dialog\n');
     await showSetupDialog(root, done => <Onboarding onDone={() => {
       completeOnboarding();
       void done();
     }} />, {
       onChangeAppState
     });
+    process.stderr.write('[DEBUG] showSetupScreens: Onboarding dialog done\n');
   }
 
+  process.stderr.write('[DEBUG] showSetupScreens: checking trust dialog\n');
   // Always show the trust dialog in interactive sessions, regardless of permission mode.
-  // The trust dialog is the workspace trust boundary — it warns about untrusted repos
-  // and checks CLAUDE.md external includes. bypassPermissions mode
-  // only affects tool execution permissions, not workspace trust.
-  // Note: non-interactive sessions (CI/CD with -p) never reach showSetupScreens at all.
-  // Skip permission checks in claubbit
   if (!isEnvTruthy(process.env.CLAUBBIT)) {
-    // Fast-path: skip TrustDialog import+render when CWD is already trusted.
-    // If it returns true, the TrustDialog would auto-resolve regardless of
-    // security features, so we can skip the dynamic import and render cycle.
     if (!checkHasTrustDialogAccepted()) {
+      process.stderr.write('[DEBUG] showSetupScreens: showing TrustDialog\n');
       const {
         TrustDialog
       } = await import('./components/TrustDialog/TrustDialog.js');
       await showSetupDialog(root, done => <TrustDialog commands={commands} onDone={done} />);
+      process.stderr.write('[DEBUG] showSetupScreens: TrustDialog done\n');
     }
 
     // Signal that trust has been verified for this session.
-    // GrowthBook checks this to decide whether to include auth headers.
+    process.stderr.write('[DEBUG] showSetupScreens: setSessionTrustAccepted\n');
     setSessionTrustAccepted(true);
 
-    // Reset and reinitialize GrowthBook after trust is established.
-    // Defense for login/logout: clears any prior client so the next init
-    // picks up fresh auth headers.
+    process.stderr.write('[DEBUG] showSetupScreens: resetGrowthBook\n');
     resetGrowthBook();
+    process.stderr.write('[DEBUG] showSetupScreens: initializeGrowthBook (void)\n');
     void initializeGrowthBook();
 
-    // Now that trust is established, prefetch system context if it wasn't already
+    process.stderr.write('[DEBUG] showSetupScreens: getSystemContext (void)\n');
     void getSystemContext();
 
-    // If settings are valid, check for any mcp.json servers that need approval
+    process.stderr.write('[DEBUG] showSetupScreens: handleMcpjsonServerApprovals\n');
     const {
       errors: allErrors
     } = getSettingsWithAllErrors();
     if (allErrors.length === 0) {
       await handleMcpjsonServerApprovals(root);
     }
+    process.stderr.write('[DEBUG] showSetupScreens: after handleMcpjsonServerApprovals\n');
 
+    process.stderr.write('[DEBUG] showSetupScreens: shouldShowClaudeMdExternalIncludesWarning\n');
     // Check for claude.md includes that need approval
     if (await shouldShowClaudeMdExternalIncludesWarning()) {
       const externalIncludes = getExternalClaudeMdIncludes(await getMemoryFiles(true));
@@ -187,8 +187,12 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   // otelHeadersHelper (which requires trust to execute) are available.
   // Defer to next tick so the OTel dynamic import resolves after first render
   // instead of during the pre-render microtask queue.
+  process.stderr.write('[DEBUG] showSetupScreens: setImmediate telemetry\n');
   setImmediate(() => initializeTelemetryAfterTrust());
-  if (await isQualifiedForGrove()) {
+  process.stderr.write('[DEBUG] showSetupScreens: isQualifiedForGrove\n');
+  const groveQualified = await isQualifiedForGrove();
+  process.stderr.write(`[DEBUG] showSetupScreens: isQualifiedForGrove=${groveQualified}\n`);
+  if (groveQualified) {
     const {
       GroveDialog
     } = await import('src/components/grove/Grove.js');
@@ -200,27 +204,31 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     }
   }
 
+  process.stderr.write(`[DEBUG] showSetupScreens: checking API key ANTHROPIC_API_KEY=${!!process.env.ANTHROPIC_API_KEY}\n`);
   // Check for custom API key
-  // On homespace, ANTHROPIC_API_KEY is preserved in process.env for child
-  // processes but ignored by Claude Code itself (see auth.ts).
   if (process.env.ANTHROPIC_API_KEY && !isRunningOnHomespace()) {
     const customApiKeyTruncated = normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY);
     const keyStatus = getCustomApiKeyStatus(customApiKeyTruncated);
+    process.stderr.write(`[DEBUG] showSetupScreens: API keyStatus=${keyStatus}\n`);
     if (keyStatus === 'new') {
+      process.stderr.write('[DEBUG] showSetupScreens: showing ApproveApiKey dialog\n');
       const {
         ApproveApiKey
       } = await import('./components/ApproveApiKey.js');
       await showSetupDialog<boolean>(root, done => <ApproveApiKey customApiKeyTruncated={customApiKeyTruncated} onDone={done} />, {
         onChangeAppState
       });
+      process.stderr.write('[DEBUG] showSetupScreens: ApproveApiKey dialog done\n');
     }
   }
+  process.stderr.write('[DEBUG] showSetupScreens: after API key check\n');
   if ((permissionMode === 'bypassPermissions' || allowDangerouslySkipPermissions) && !hasSkipDangerousModePermissionPrompt()) {
     const {
       BypassPermissionsModeDialog
     } = await import('./components/BypassPermissionsModeDialog.js');
     await showSetupDialog(root, done => <BypassPermissionsModeDialog onAccept={done} />);
   }
+  process.stderr.write('[DEBUG] showSetupScreens: TRANSCRIPT_CLASSIFIER check\n');
   if (feature('TRANSCRIPT_CLASSIFIER')) {
     // Only show the opt-in dialog if auto mode actually resolved — if the
     // gate denied it (org not allowlisted, settings disabled), showing
@@ -238,6 +246,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   // dev channels to any --channels list already set in main.tsx. Org policy
   // is NOT bypassed — gateChannelServer() still runs; this flag only exists
   // to sidestep the --channels approved-server allowlist.
+  process.stderr.write('[DEBUG] showSetupScreens: KAIROS channels check\n');
   if (feature('KAIROS') || feature('KAIROS_CHANNELS')) {
     // gateChannelServer and ChannelsNotice read tengu_harbor after this
     // function returns. A cold disk cache (fresh install, or first run after
@@ -287,6 +296,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     }
   }
 
+  process.stderr.write('[DEBUG] showSetupScreens: Chrome onboarding check\n');
   // Show Chrome onboarding for first-time Claude in Chrome users
   if (claudeInChrome && !getGlobalConfig().hasCompletedClaudeInChromeOnboarding) {
     const {
@@ -294,6 +304,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     } = await import('./components/ClaudeInChromeOnboarding.js');
     await showSetupDialog(root, done => <ClaudeInChromeOnboarding onDone={done} />);
   }
+  process.stderr.write('[DEBUG] showSetupScreens: DONE returning\n');
   return onboardingShown;
 }
 export function getRenderContext(exitOnCtrlC: boolean): {

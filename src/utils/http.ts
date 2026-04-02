@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 /**
  * HTTP utility constants and helpers
  */

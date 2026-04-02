@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { logEvent } from 'src/services/analytics/index.js';

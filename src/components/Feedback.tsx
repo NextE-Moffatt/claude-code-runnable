@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import axios from 'axios';
 import { readFile, stat } from 'fs/promises';
 import * as React from 'react';

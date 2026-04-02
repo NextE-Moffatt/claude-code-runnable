@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature, MACRO } from 'bun:bundle'
 import { randomUUID } from 'crypto'
 import { hostname, tmpdir } from 'os'
 import { basename, join, resolve } from 'path'

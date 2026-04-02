@@ -17,6 +17,8 @@
  *   getSyntaxTheme always returns the default for the given Claude theme.
  */
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { diffArrays } from 'diff'
 import type * as hljsNamespace from 'highlight.js'
 import { basename, extname } from 'path'

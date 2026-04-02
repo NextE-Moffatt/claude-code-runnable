@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 /**
  * Native Installer Implementation
  *

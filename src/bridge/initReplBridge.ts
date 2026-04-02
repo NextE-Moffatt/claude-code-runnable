@@ -13,6 +13,8 @@
  * (SDK -p mode via query.enableRemoteControl).
  */
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { feature } from 'bun:bundle'
 import { hostname } from 'os'
 import { getOriginalCwd, getSessionId } from '../bootstrap/state.js'

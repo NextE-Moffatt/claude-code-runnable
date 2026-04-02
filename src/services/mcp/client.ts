@@ -1,4 +1,6 @@
-import { feature } from 'bun:bundle'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+import { feature, MACRO } from 'bun:bundle'
 import type {
   Base64ImageSource,
   ContentBlockParam,

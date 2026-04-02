@@ -1,3 +1,4 @@
+import { MACRO } from 'bun:bundle'
 import chalk from 'chalk'
 import { toString as qrToString } from 'qrcode'
 import {

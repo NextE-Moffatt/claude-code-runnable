@@ -6,6 +6,8 @@
 // audio module (macOS) or SoX for recording, and Anthropic's voice_stream
 // endpoint (conversation_engine) for STT.
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSetVoiceState } from '../context/voice.js'
 import { useTerminalFocus } from '../ink/hooks/use-terminal-focus.js'

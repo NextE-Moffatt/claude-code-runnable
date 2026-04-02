@@ -285,16 +285,20 @@ async function main(): Promise<void> {
   }
 
   // No special flags detected, load and run the full CLI
+  process.stderr.write('[DEBUG] before earlyInput import\n');
   const {
     startCapturingEarlyInput
   } = await import('../utils/earlyInput.js');
   startCapturingEarlyInput();
   profileCheckpoint('cli_before_main_import');
+  process.stderr.write('[DEBUG] before main.js import\n');
   const {
     main: cliMain
   } = await import('../main.js');
+  process.stderr.write('[DEBUG] after main.js import, calling cliMain\n');
   profileCheckpoint('cli_after_main_import');
   await cliMain();
+  process.stderr.write('[DEBUG] after cliMain returned\n');
   profileCheckpoint('cli_after_main_complete');
 }
 

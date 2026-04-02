@@ -9,6 +9,8 @@
  * package is only loaded the first time a lock function is actually called.
  */
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 import type { CheckOptions, LockOptions, UnlockOptions } from 'proper-lockfile'
 
 type Lockfile = typeof import('proper-lockfile')
