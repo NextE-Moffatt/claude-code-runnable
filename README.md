@@ -1,8 +1,8 @@
 # claude-code-runnable
 
-> 让还原的 Claude Code TypeScript 源码真正跑起来的工程化方案
+> 逆向还原 Claude Code TypeScript 源码，用 Bun 原生跑起来 ⚡
 
-本项目是一个**学习性工具链**，目标是在 Node.js 环境中运行由 source map 还原的 Claude Code 源码，方便开发者边运行边阅读，深入理解其架构设计。
+本项目是一个**学习性工程**，目标是在 Bun 运行时中直接运行由 source map 还原的 Claude Code 源码，方便开发者边运行边阅读，深入理解其架构设计。
 
 ---
 
@@ -11,81 +11,58 @@
 [ChinaSiro/claude-code-sourcemap](https://github.com/ChinaSiro/claude-code-sourcemap) 通过解析 `@anthropic-ai/claude-code` npm 包内附带的 `cli.js.map`，还原出了约 4,756 个 TypeScript 源文件。
 
 但还原出的源码**无法直接运行**，原因在于：
-- 构建工具是 Bun（非 Node.js），使用了 `bun:bundle`、`bun:ffi` 等专有 API
+
+- 构建工具是 Bun，使用了 `bun:bundle`（编译期宏）等专有 API
 - 依赖大量 Anthropic 内部私有包（`@ant/*`、`@anthropic-ai/sandbox-runtime` 等）
 - 引用了多个未还原的内部文件
 - 使用了 React 19 的新 API（`useEffectEvent`）
 
-**本项目解决了上述所有问题**，让源码可以在标准 Node.js 18+ 环境中启动运行。
-
----
-
-## 工具链说明
-
-| 文件 | 作用 |
-|------|------|
-| `bun-loader.mjs` | ESM 自定义 loader，拦截 `bun:bundle`/`bun:ffi` 协议 |
-| `bun-mock.mjs` | Bun 专属 API 的 Node.js 运行时 mock |
-| `scripts/gen-pkg-stubs.mjs` | 扫描源码，自动为 Anthropic 私有包生成 stub |
-| `scripts/gen-file-stubs.mjs` | 扫描源码，为未还原的内部文件生成 stub |
-| `scripts/gen-stubs.mjs` | 批量生成缺失的内部 `.ts` stub 文件 |
-| `types/bun-stubs.d.ts` | Bun 专属模块的 TypeScript 类型声明 |
-| `types/internal-stubs.d.ts` | Anthropic 内部包的 TypeScript 类型声明 |
-| `tsconfig.json` | 适配还原源码的 TypeScript 编译配置 |
-| `package.json` | 完整依赖声明（含所有可公开安装的依赖） |
+**本项目解决了上述所有问题**，让源码可以在 Bun 运行时中直接启动运行。
 
 ---
 
 ## 快速开始
 
-### 1. 获取还原的源码
+### 环境要求
+
+- [Bun](https://bun.sh) >= 1.0（推荐 1.3+）
+
+### 安装运行
 
 ```bash
-git clone https://github.com/ChinaSiro/claude-code-sourcemap.git
-cd claude-code-sourcemap/restored-src
+git clone https://github.com/NextE-Moffatt/claude-code-runnable.git
+cd claude-code-runnable/restored-src
+
+bun install
+./run.sh          # 启动交互式 TUI
+./run.sh --help   # 查看帮助
+./run.sh --version
 ```
 
-### 2. 复制本项目的工具链文件
-
-将本仓库的所有文件覆盖到 `restored-src/` 目录中。
-
-### 3. 安装依赖
+或者直接：
 
 ```bash
-npm install
-# postinstall 会自动运行 gen-pkg-stubs.mjs 生成私有包 stub
-```
-
-### 4. 生成内部文件 stub
-
-```bash
-node scripts/gen-stubs.mjs
-node scripts/gen-file-stubs.mjs
-```
-
-### 5. 运行
-
-```bash
-NODE_OPTIONS="--experimental-loader ./bun-loader.mjs" npx tsx src/main.tsx
-NODE_OPTIONS="--experimental-loader ./bun-loader.mjs" npx tsx src/main.tsx --help
+bun --preload ./bun-preload.ts src/entrypoints/cli.tsx
 ```
 
 ---
 
-## 解决的核心技术问题
+## 核心技术问题与解法
 
-### 问题 1：`bun:bundle` 运行时错误
+### 问题 1：`bun:bundle` 编译期宏在运行时不可用
 
-Bun 的编译期 API 在 Node.js 中无法加载。通过自定义 ESM loader 拦截 `bun:` 协议，重定向到 mock 实现。
+`bun:bundle` 是 Bun 打包器的编译期专属模块，运行时虽存在但不导出 `MACRO`（那是打包时注入的常量）。即使写 Bun 插件也无法覆盖 `bun:` 前缀的内置模块。
 
-```js
-// bun-loader.mjs
-export function resolve(specifier, context, nextResolve) {
-  if (specifier === 'bun:bundle' || specifier === 'bun:ffi') {
-    return { shortCircuit: true, url: bunMockUrl };
-  }
-  return nextResolve(specifier, context);
+**解法：** 创建 `src/bun-bundle-shim.ts`，提供 `MACRO` 和 `feature()` 的运行时实现；用 `sed` 批量将 233 个源文件的 `from 'bun:bundle'` 替换为 `from 'src/bun-bundle-shim.ts'`，利用 tsconfig `baseUrl` 保证路径在任意子目录中统一可解析。
+
+```typescript
+// src/bun-bundle-shim.ts
+export const MACRO = (globalThis as any).MACRO ?? {
+  VERSION: '2.1.88',
+  ISSUES_EXPLAINER: 'report the issue at https://github.com/anthropics/claude-code/issues',
+  VERSION_CHANGELOG: '',
 }
+export function feature(_name: string): boolean { return false }
 ```
 
 ### 问题 2：Anthropic 私有包
@@ -94,35 +71,60 @@ export function resolve(specifier, context, nextResolve) {
 
 ### 问题 3：未还原的内部文件
 
-source map 未能还原约 154 个内部文件。通过脚本分析谁引用了这些文件、需要哪些导出，自动生成最小化 stub。
+source map 未能还原约 154 个内部文件。通过脚本分析引用关系，自动生成最小化 stub。
 
-### 问题 4：React 19 API
+### 问题 4：运行时 API 兼容性
 
-`react-reconciler@0.33` 需要 React 19。升级 React 至 19.x 后，`useEffectEvent` 等新 API 原生支持。
+- `headers.forEach` 类型不兼容：加 `typeof` 检测后回退到 `Object.keys()`
+- `error.headers?.get()` 可能不是函数：改用双重可选链 `?.get?.()`
+- `isSupportedPlatform()` 在 React 渲染中抛错：包一层 try/catch 返回 `false`
+
+---
+
+## DIY 主题：超级赛亚人风格 ⚡
+
+本仓库还顺手把欢迎界面改成了超级赛亚人配色，作为"可以随意改源码"的一个示范：
+
+| 文件 | 改动 |
+|------|------|
+| `src/components/LogoV2/Clawd.tsx` | 把吉祥物换成黄金色 ASCII 战士 + 闪电 |
+| `src/components/LogoV2/LogoV2.tsx` | 边框颜色改为黄色，标题加上 ⚡ |
+| `src/utils/logoV2Utils.ts` | 欢迎语改为"战斗力暴增！" |
+
+---
+
+## 工具链文件说明
+
+| 文件 | 作用 |
+|------|------|
+| `bun-preload.ts` | Bun preload：在主线程中预设 `globalThis.MACRO` |
+| `src/bun-bundle-shim.ts` | `bun:bundle` 的运行时 shim，提供 MACRO 和 feature() |
+| `run.sh` | 一键启动脚本 |
+| `tsconfig.json` | 含 `baseUrl: "."` 以支持 `src/` 前缀绝对路径 |
 
 ---
 
 ## 架构速览
 
 ```
-restored-src/src/
-├── main.tsx              # CLI 入口
+src/
+├── entrypoints/cli.tsx   # CLI 入口
 ├── tools/                # 工具实现（Bash、FileEdit、Grep 等）
 ├── commands/             # 命令实现（commit、review、config 等）
 ├── services/             # API、MCP 服务
 ├── coordinator/          # 多 Agent 协调 ⭐
 ├── context/              # React Context 状态管理
-├── assistant/            # 助手模式（内部代号 KAIROS）
+├── components/LogoV2/    # 终端 TUI 欢迎界面
 ├── plugins/              # 插件系统
 ├── skills/               # Skills 系统
 └── utils/                # 工具函数
 ```
 
 **关键架构特点：**
-- 使用 React + [Ink](https://github.com/vadimdemedes/ink) 渲染终端 UI（不是传统 CLI）
-- 工具调用通过统一接口抽象，LLM 通过 `tool_use` 调用
-- `coordinator/` 实现了子 Agent 的派发与结果聚合
-- 基于 Bun 构建，源码中大量使用 `MACRO` 做编译期常量注入
+- 使用 React + [Ink](https://github.com/vadimdemedes/ink) 渲染终端 UI（不是传统 CLI 输出）
+- 工具调用通过统一接口抽象，LLM 通过 `tool_use` 调度
+- `coordinator/` 实现子 Agent 的派发与结果聚合
+- 大量使用 `MACRO` 做编译期常量注入（VERSION、ISSUES_EXPLAINER 等）
 
 ---
 
@@ -130,7 +132,7 @@ restored-src/src/
 
 - 本仓库**不包含** Claude Code 的还原源码，仅包含工程化工具链
 - Claude Code 源码版权归 **Anthropic** 所有
-- 还原源码来自 [ChinaSiro/claude-code-sourcemap](https://github.com/ChinaSiro/claude-code-sourcemap)，后者基于 npm 包中公开附带的 source map 文件提取
+- 还原源码来自 [ChinaSiro/claude-code-sourcemap](https://github.com/ChinaSiro/claude-code-sourcemap)，基于 npm 包中公开附带的 source map 文件提取
 - 本项目仅供技术学习研究，**禁止商业使用**
 
 ---
