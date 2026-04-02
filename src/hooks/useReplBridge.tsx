@@ -1,6 +1,6 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-import { feature } from 'bun:bundle';
+import { feature } from 'src/bun-bundle-shim.ts';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { setMainLoopModelOverride } from '../bootstrap/state.js';
 import { type BridgePermissionCallbacks, type BridgePermissionResponse, isBridgePermissionResponse } from '../bridge/bridgePermissionCallbacks.js';

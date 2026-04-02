@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import { createHash } from 'crypto'
 import type { AssistantMessage, UserMessage } from '../types/message.js'
 

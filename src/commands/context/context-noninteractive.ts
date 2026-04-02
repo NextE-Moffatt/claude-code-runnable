@@ -1,6 +1,6 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-import { feature } from 'bun:bundle'
+import { feature } from 'src/bun-bundle-shim.ts'
 import { microcompactMessages } from '../../services/compact/microCompact.js'
 import type { AppState } from '../../state/AppStateStore.js'
 import type { Tools, ToolUseContext } from '../../Tool.js'

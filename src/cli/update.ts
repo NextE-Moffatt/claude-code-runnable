@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import chalk from 'chalk'
 import { logEvent } from 'src/services/analytics/index.js'
 import {

@@ -1,6 +1,6 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-import { feature } from 'bun:bundle'
+import { feature } from 'src/bun-bundle-shim.ts'
 
 /**
  * Check if a file write/edit to a team memory path contains secrets.

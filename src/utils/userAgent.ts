@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 /**
  * User-Agent string helpers.
  *

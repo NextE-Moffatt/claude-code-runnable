@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import axios from 'axios';
 import { readFile, stat } from 'fs/promises';
 import * as React from 'react';

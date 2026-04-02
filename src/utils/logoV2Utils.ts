@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import { getDirectConnectServerUrl, getSessionId } from '../bootstrap/state.js'
 import { stringWidth } from '../ink/stringWidth.js'
 import type { LogOption } from '../types/logs.js'
@@ -97,9 +97,9 @@ export function calculateOptimalLeftWidth(
  */
 export function formatWelcomeMessage(username: string | null): string {
   if (!username || username.length > MAX_USERNAME_LENGTH) {
-    return 'Welcome back!'
+    return '⚡ 战斗力：MAX！'
   }
-  return `Welcome back ${username}!`
+  return `⚡ ${username}，战斗力暴增！`
 }
 
 /**

@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import { randomUUID } from 'crypto'
 import {

@@ -27,7 +27,7 @@
 
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-import { feature } from 'bun:bundle'
+import { feature } from 'src/bun-bundle-shim.ts'
 import ignore from 'ignore'
 import memoize from 'lodash-es/memoize.js'
 import { Lexer } from 'marked'

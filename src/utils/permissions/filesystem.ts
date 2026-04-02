@@ -1,4 +1,4 @@
-import { feature, MACRO } from 'bun:bundle'
+import { feature, MACRO } from 'src/bun-bundle-shim.ts'
 import { randomBytes } from 'crypto'
 import ignore from 'ignore'
 import memoize from 'lodash-es/memoize.js'

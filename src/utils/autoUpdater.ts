@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import axios from 'axios'
 import { constants as fsConstants } from 'fs'
 import { access, writeFile } from 'fs/promises'

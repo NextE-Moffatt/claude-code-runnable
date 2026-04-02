@@ -1,7 +1,7 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 import { c as _c } from "react/compiler-runtime";
-import { feature } from 'bun:bundle';
+import { feature } from 'src/bun-bundle-shim.ts';
 import * as React from 'react';
 import { useSyncExternalStore } from 'react';
 import { Box, Text } from '../ink.js';

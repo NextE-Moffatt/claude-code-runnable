@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 /**
  * Service for heap dump capture.
  * Used by the /heapdump command.

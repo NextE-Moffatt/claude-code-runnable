@@ -1,4 +1,4 @@
-import { feature, MACRO } from 'bun:bundle';
+import { feature, MACRO } from 'src/bun-bundle-shim.ts';
 
 // Bugfix for corepack auto-pinning, which adds yarnpkg to peoples' package.jsons
 // eslint-disable-next-line custom-rules/no-top-level-side-effects

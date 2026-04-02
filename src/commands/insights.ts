@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import { execFileSync } from 'child_process'
 import { diffLines } from 'diff'
 import { constants as fsConstants } from 'fs'

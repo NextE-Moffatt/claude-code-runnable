@@ -1,6 +1,6 @@
 // Critical system constants extracted to break circular dependencies
 
-import { feature, MACRO } from 'bun:bundle'
+import { feature, MACRO } from 'src/bun-bundle-shim.ts'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import { logForDebugging } from '../utils/debug.js'
 import { isEnvDefinedFalsy } from '../utils/envUtils.js'

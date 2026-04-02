@@ -2,7 +2,7 @@ import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 import { c as _c } from "react/compiler-runtime";
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
-import { feature, MACRO } from 'bun:bundle';
+import { feature, MACRO } from 'src/bun-bundle-shim.ts';
 import { Box, Text, useTheme, useThemeSetting, useTerminalFocus } from '../../ink.js';
 import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import * as React from 'react';

@@ -1,6 +1,6 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-import { feature, MACRO } from 'bun:bundle'
+import { feature, MACRO } from 'src/bun-bundle-shim.ts'
 import type {
   Base64ImageSource,
   ContentBlockParam,

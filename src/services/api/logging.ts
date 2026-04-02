@@ -1,4 +1,4 @@
-import { feature, MACRO } from 'bun:bundle'
+import { feature, MACRO } from 'src/bun-bundle-shim.ts'
 import { APIError } from '@anthropic-ai/sdk'
 import type {
   BetaStopReason,

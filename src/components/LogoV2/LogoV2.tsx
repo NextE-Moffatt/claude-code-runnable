@@ -27,7 +27,7 @@ import { getStartupPerfLogPath, isDetailedProfilingEnabled } from 'src/utils/sta
 import { EmergencyTip } from './EmergencyTip.js';
 import { VoiceModeNotice } from './VoiceModeNotice.js';
 import { Opus1mMergeNotice } from './Opus1mMergeNotice.js';
-import { feature, MACRO } from 'bun:bundle';
+import { feature, MACRO } from 'src/bun-bundle-shim.ts';
 
 // Conditional require so ChannelsNotice.tsx tree-shakes when both flags are
 // false. A module-scope helper component inside a feature() ternary does NOT
@@ -250,7 +250,7 @@ export function LogoV2() {
   }
   const layoutMode = getLayoutMode(columns);
   const userTheme = resolveThemeSetting(getGlobalConfig().theme);
-  const borderTitle = ` ${color("claude", userTheme)("Claude Code")} ${color("inactive", userTheme)(`v${version}`)} `;
+  const borderTitle = ` ⚡ 超级赛亚人 Claude Code ⚡ ${color("inactive", userTheme)(`v${version}`)} `;
   const compactBorderTitle = color("claude", userTheme)(" Claude Code ");
   if (layoutMode === "compact") {
     let welcomeMessage = formatWelcomeMessage(username);
@@ -344,7 +344,7 @@ export function LogoV2() {
   const T1 = Box;
   const t11 = "column";
   const t12 = "round";
-  const t13 = "claude";
+  const t13 = "yellow";
   let t14;
   if ($[44] !== borderTitle) {
     t14 = {

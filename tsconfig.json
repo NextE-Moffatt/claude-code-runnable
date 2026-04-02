@@ -16,7 +16,8 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "bun:bundle": ["./src/bun-bundle-shim.ts"]
     }
   },
   "include": ["src/**/*", "types/**/*"],

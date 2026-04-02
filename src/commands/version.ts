@@ -1,4 +1,4 @@
-import { MACRO } from 'bun:bundle'
+import { MACRO } from 'src/bun-bundle-shim.ts'
 import type { Command, LocalCommandCall } from '../types/command.js'
 
 const call: LocalCommandCall = async () => {

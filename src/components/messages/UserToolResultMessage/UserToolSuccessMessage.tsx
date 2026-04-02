@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle';
+import { feature } from 'src/bun-bundle-shim.ts';
 import figures from 'figures';
 import * as React from 'react';
 import { SentryErrorBoundary } from 'src/components/SentryErrorBoundary.js';

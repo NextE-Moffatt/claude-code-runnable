@@ -1,6 +1,6 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-import { feature } from 'bun:bundle';
+import { feature } from 'src/bun-bundle-shim.ts';
 import * as React from 'react';
 import type { LocalJSXCommandContext } from '../../commands.js';
 import { ContextVisualization } from '../../components/ContextVisualization.js';
